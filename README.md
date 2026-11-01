@@ -78,4 +78,6 @@ STRIPE_SECRET_KEY=<stripe-secret-key>
 CLIENT_URL=https://<your-render-service>.onrender.com
 ```
 
+Render automatically provides `RENDER_EXTERNAL_URL`; in production the backend prefers that value when generating Stripe redirect URLs and allowing browser origins.
+
 Do not commit `.env` or paste secret values into the repository. After deployment, verify signup, login, cart, admin product creation, Stripe test checkout, and the purchase-success flow.

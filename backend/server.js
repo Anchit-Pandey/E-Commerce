@@ -16,6 +16,10 @@ dotenv.config();
 
 const app = express();
 const PORT = process.env.PORT || 5000;
+const clientUrl =
+	process.env.NODE_ENV === "production"
+		? process.env.RENDER_EXTERNAL_URL || process.env.CLIENT_URL
+		: process.env.CLIENT_URL;
 
 const __dirname = path.resolve();
 
@@ -24,7 +28,7 @@ app.use(cookieParser());
 app.disable("x-powered-by");
 app.use((req, res, next) => {
 	const origin = req.headers.origin;
-	if (origin && origin === process.env.CLIENT_URL) {
+	if (origin && origin === clientUrl) {
 		res.setHeader("Access-Control-Allow-Origin", origin);
 		res.setHeader("Access-Control-Allow-Credentials", "true");
 		res.setHeader("Access-Control-Allow-Headers", "Content-Type");

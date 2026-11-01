@@ -152,6 +152,10 @@ import { stripe } from "../lib/stripe.js";
 const MAX_QUANTITY_PER_PRODUCT = 99;
 const REWARD_COUPON_THRESHOLD_CENTS = 20000; // $200 (amount actually paid, after discounts)
 const OBJECT_ID_REGEX = /^[a-f\d]{24}$/i;
+const clientUrl =
+	process.env.NODE_ENV === "production"
+		? process.env.RENDER_EXTERNAL_URL || process.env.CLIENT_URL
+		: process.env.CLIENT_URL;
 
 // SECURITY: the client is only allowed to tell us WHICH products and HOW MANY.
 // Names, prices and images are never read from the request - they come from MongoDB.
@@ -232,8 +236,8 @@ export const createCheckoutSession = async (req, res) => {
 			payment_method_types: ["card"],
 			line_items: lineItems,
 			mode: "payment",
-			success_url: `${process.env.CLIENT_URL}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
-			cancel_url: `${process.env.CLIENT_URL}/purchase-cancel`,
+			success_url: `${clientUrl}/purchase-success?session_id={CHECKOUT_SESSION_ID}`,
+			cancel_url: `${clientUrl}/purchase-cancel`,
 			discounts: coupon
 				? [
 						{
