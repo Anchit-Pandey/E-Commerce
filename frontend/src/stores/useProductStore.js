@@ -15,9 +15,12 @@ export const useProductStore = create((set) => ({
 				products: [...prevState.products, res.data],
 				loading: false,
 			}));
+			toast.success("Product created successfully");
+			return true;
 		} catch (error) {
-			toast.error(error.response.data.error);
+			toast.error(error.response?.data?.message || "Failed to create product");
 			set({ loading: false });
+			return false;
 		}
 	},
 	fetchAllProducts: async () => {
@@ -27,7 +30,7 @@ export const useProductStore = create((set) => ({
 			set({ products: response.data.products, loading: false });
 		} catch (error) {
 			set({ error: "Failed to fetch products", loading: false });
-			toast.error(error.response.data.error || "Failed to fetch products");
+			toast.error(error.response?.data?.message || "Failed to fetch products");
 		}
 	},
 	fetchProductsByCategory: async (category) => {
@@ -37,7 +40,7 @@ export const useProductStore = create((set) => ({
 			set({ products: response.data.products, loading: false });
 		} catch (error) {
 			set({ error: "Failed to fetch products", loading: false });
-			toast.error(error.response.data.error || "Failed to fetch products");
+			toast.error(error.response?.data?.message || "Failed to fetch products");
 		}
 	},
 	deleteProduct: async (productId) => {
@@ -50,7 +53,7 @@ export const useProductStore = create((set) => ({
 			}));
 		} catch (error) {
 			set({ loading: false });
-			toast.error(error.response.data.error || "Failed to delete product");
+			toast.error(error.response?.data?.message || "Failed to delete product");
 		}
 	},
 	toggleFeaturedProduct: async (productId) => {
@@ -66,7 +69,7 @@ export const useProductStore = create((set) => ({
 			}));
 		} catch (error) {
 			set({ loading: false });
-			toast.error(error.response.data.error || "Failed to update product");
+			toast.error(error.response?.data?.message || "Failed to update product");
 		}
 	},
 	fetchFeaturedProducts: async () => {
@@ -75,8 +78,8 @@ export const useProductStore = create((set) => ({
 			const response = await axios.get("/products/featured");
 			set({ products: response.data, loading: false });
 		} catch (error) {
-			set({ error: "Failed to fetch products", loading: false });
-			console.log("Error fetching featured products:", error);
+			set({ error: "Failed to fetch products", loading: false, products: [] });
+			toast.error(error.response?.data?.message || "Failed to fetch featured products");
 		}
 	},
 }));

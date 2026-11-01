@@ -2,12 +2,8 @@ import { motion } from "framer-motion";
 import { useCartStore } from "../stores/useCartStore";
 import { Link } from "react-router-dom";
 import { MoveRight } from "lucide-react";
-import { loadStripe } from "@stripe/stripe-js";
 import axios from "../lib/axios";
-
-const stripePromise = loadStripe(
-	"pk_test_51SMF3sEcfTKsTjIKZwrPzH1GL5pxi9o620T0LEgNWeE7BZdYNob3199hfi9qzXYEEieH3ildVbkWTbIjGiEtvnrY00ZYKMzm6P"
-);
+import toast from "react-hot-toast";
 
 const OrderSummary = () => {
 	const { total, subtotal, coupon, isCouponApplied, cart } = useCartStore();
@@ -19,8 +15,6 @@ const OrderSummary = () => {
 
 const handlePayment = async () => {
   try {
-    const stripe = await stripePromise;
-
     // Create a checkout session from the backend
     const res = await axios.post("/payments/create-checkout-session", {
       products: cart,
@@ -33,7 +27,7 @@ const handlePayment = async () => {
     window.location.href = session.url;
 
   } catch (error) {
-    console.error("Payment error:", error);
+    toast.error(error.response?.data?.message || "Payment could not be started");
   }
 };
 

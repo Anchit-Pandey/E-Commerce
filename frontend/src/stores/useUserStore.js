@@ -20,7 +20,7 @@ export const useUserStore = create((set, get) => ({
 			set({ user: res.data, loading: false });
 		} catch (error) {
 			set({ loading: false });
-			toast.error(error.response.data.message || "An error occurred");
+			toast.error(error.response?.data?.message || "An error occurred");
 		}
 	},
 	login: async (email, password) => {
@@ -32,7 +32,7 @@ export const useUserStore = create((set, get) => ({
 			set({ user: res.data, loading: false });
 		} catch (error) {
 			set({ loading: false });
-			toast.error(error.response.data.message || "An error occurred");
+			toast.error(error.response?.data?.message || "An error occurred");
 		}
 	},
 
@@ -50,8 +50,7 @@ export const useUserStore = create((set, get) => ({
 		try {
 			const response = await axios.get("/auth/profile");
 			set({ user: response.data, checkingAuth: false });
-		} catch (error) {
-			console.log(error.message);
+		} catch {
 			set({ checkingAuth: false, user: null });
 		}
 	},
@@ -81,7 +80,8 @@ axios.interceptors.response.use(
 	(response) => response,
 	async (error) => {
 		const originalRequest = error.config;
-		if (error.response?.status === 401 && !originalRequest._retry) {
+		const isAuthRequest = originalRequest?.url?.includes("/auth/");
+		if (error.response?.status === 401 && !isAuthRequest && !originalRequest?._retry) {
 			originalRequest._retry = true;
 
 			try {
@@ -94,13 +94,14 @@ axios.interceptors.response.use(
 				// Start a new refresh process
 				refreshPromise = useUserStore.getState().refreshToken();
 				await refreshPromise;
-				refreshPromise = null;
 
 				return axios(originalRequest);
 			} catch (refreshError) {
 				// If refresh fails, redirect to login or handle as needed
 				useUserStore.getState().logout();
 				return Promise.reject(refreshError);
+			} finally {
+				refreshPromise = null;
 			}
 		}
 		return Promise.reject(error);

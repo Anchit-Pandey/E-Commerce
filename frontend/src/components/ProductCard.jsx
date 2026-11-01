@@ -2,10 +2,12 @@ import toast from "react-hot-toast";
 import { ShoppingCart } from "lucide-react";
 import { useUserStore } from "../stores/useUserStore";
 import { useCartStore } from "../stores/useCartStore";
+import { getProductImage } from "../lib/productImage";
 
 const ProductCard = ({ product }) => {
 	const { user } = useUserStore();
 	const { addToCart } = useCartStore();
+	const { image: imageSrc, fallback: fallbackImage } = getProductImage(product);
 	const handleAddToCart = () => {
 		if (!user) {
 			toast.error("Please login to add products to cart", { id: "login" });
@@ -19,8 +21,17 @@ const ProductCard = ({ product }) => {
 	return (
 		<div className='flex w-full relative flex-col overflow-hidden rounded-lg border border-gray-700 shadow-lg'>
 			<div className='relative mx-3 mt-3 flex h-60 overflow-hidden rounded-xl'>
-				<img className='object-cover w-full' src={product.image} alt='product image' />
-				<div className='absolute inset-0 bg-black bg-opacity-20' />
+				<img
+					className='object-cover w-full'
+					src={imageSrc}
+					alt={product.name}
+					onError={(event) => {
+						if (!event.currentTarget.src.endsWith(fallbackImage)) {
+							event.currentTarget.src = fallbackImage;
+						}
+					}}
+				/>
+				<div className='absolute inset-0 bg-black/20' />
 			</div>
 
 			<div className='mt-4 px-5 pb-5'>

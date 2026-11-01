@@ -21,6 +21,13 @@ const __dirname = path.resolve();
 
 app.use(express.json({ limit: "10mb" })); // allows you to parse the body of the request
 app.use(cookieParser());
+app.disable("x-powered-by");
+app.use((req, res, next) => {
+	res.setHeader("X-Content-Type-Options", "nosniff");
+	res.setHeader("X-Frame-Options", "DENY");
+	res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+	next();
+});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
@@ -34,13 +41,20 @@ if (process.env.NODE_ENV === "production") {
   app.use(express.static(path.join(__dirname, "/frontend/dist")));
 
   // For any other route, serve index.html (React Router support)
-  app.get("*", (req, res) => {
+  app.get("/{*splat}", (req, res) => {
     res.sendFile(path.join(__dirname, "/frontend/dist/index.html"));
   });
 }
 
 
-app.listen(PORT, () => {
-	console.log("Server is running on http://localhost:" + PORT);
-	connectDB();
+const startServer = async () => {
+	await connectDB();
+	app.listen(PORT, () => {
+		console.log("Server is running on http://localhost:" + PORT);
+	});
+};
+
+startServer().catch((error) => {
+	console.error("Failed to start server:", error.message);
+	process.exit(1);
 });

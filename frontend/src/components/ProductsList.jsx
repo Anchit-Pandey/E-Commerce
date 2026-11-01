@@ -1,11 +1,10 @@
 import { motion } from "framer-motion";
 import { Trash, Star } from "lucide-react";
 import { useProductStore } from "../stores/useProductStore";
+import { getProductImage } from "../lib/productImage";
 
 const ProductsList = () => {
 	const { deleteProduct, toggleFeaturedProduct, products } = useProductStore();
-
-	console.log("products", products);
 
 	return (
 		<motion.div
@@ -59,8 +58,12 @@ const ProductsList = () => {
 									<div className='flex-shrink-0 h-10 w-10'>
 										<img
 											className='h-10 w-10 rounded-full object-cover'
-											src={product.image}
+											src={getProductImage(product).image}
 											alt={product.name}
+											onError={(event) => {
+												const { fallback } = getProductImage(product);
+												if (!event.currentTarget.src.endsWith(fallback)) event.currentTarget.src = fallback;
+											}}
 										/>
 									</div>
 									<div className='ml-4'>

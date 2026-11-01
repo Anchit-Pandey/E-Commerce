@@ -34,7 +34,12 @@ const setCookies = (res, accessToken, refreshToken) => {
 };
 
 export const signup = async (req, res) => {
-	const { email, password, name } = req.body;
+	const email = String(req.body.email || "").trim().toLowerCase();
+	const password = String(req.body.password || "");
+	const name = String(req.body.name || "").trim();
+	if (!email || !name || password.length < 6) {
+		return res.status(400).json({ message: "Name, valid email, and a password of at least 6 characters are required" });
+	}
 	try {
 		const userExists = await User.findOne({ email });
 
@@ -63,7 +68,8 @@ export const signup = async (req, res) => {
 
 export const login = async (req, res) => {
 	try {
-		const { email, password } = req.body;
+		const email = String(req.body.email || "").trim().toLowerCase();
+		const password = String(req.body.password || "");
 		const user = await User.findOne({ email });
 
 		if (user && (await user.comparePassword(password))) {
@@ -90,16 +96,22 @@ export const logout = async (req, res) => {
 	try {
 		const refreshToken = req.cookies.refreshToken;
 		if (refreshToken) {
-			const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
-			await redis.del(`refresh_token:${decoded.userId}`);
+			try {
+				const decoded = jwt.verify(refreshToken, process.env.REFRESH_TOKEN_SECRET);
+				await redis.del(`refresh_token:${decoded.userId}`);
+			} catch {
+				// Invalid or expired tokens are already logged out.
+			}
 		}
 
 		res.clearCookie("accessToken");
 		res.clearCookie("refreshToken");
 		res.json({ message: "Logged out successfully" });
 	} catch (error) {
-		console.log("Error in logout controller", error.message);
-		res.status(500).json({ message: "Server error", error: error.message });
+		console.error("Error in logout controller", error.message);
+		res.clearCookie("accessToken");
+		res.clearCookie("refreshToken");
+		res.status(500).json({ message: "Server error" });
 	}
 };
 
@@ -130,8 +142,8 @@ export const refreshToken = async (req, res) => {
 
 		res.json({ message: "Token refreshed successfully" });
 	} catch (error) {
-		console.log("Error in refreshToken controller", error.message);
-		res.status(500).json({ message: "Server error", error: error.message });
+		console.error("Error in refreshToken controller", error.message);
+		res.status(401).json({ message: "Invalid or expired refresh token" });
 	}
 };
 

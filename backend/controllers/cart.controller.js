@@ -1,15 +1,33 @@
 import Product from "../models/product.model.js";
+import mongoose from "mongoose";
+
+const MAX_CART_QUANTITY = 99;
+
+const getCartProductId = (item) => {
+	const productId = item?.product;
+	return productId && mongoose.isValidObjectId(productId) ? String(productId) : null;
+};
+
+const cleanCartItems = (user) => {
+	const validItems = (user.cartItems || []).filter((item) => getCartProductId(item));
+	if (validItems.length !== (user.cartItems || []).length) {
+		user.cartItems = validItems;
+	}
+	return user.cartItems;
+};
 
 export const getCartProducts = async (req, res) => {
 	try {
-		const products = await Product.find({ _id: { $in: req.user.cartItems } });
+		const storedCartItems = cleanCartItems(req.user);
+		const productIds = storedCartItems.map((item) => item.product);
+		const products = await Product.find({ _id: { $in: productIds } });
 
-		// add quantity for each product
 		const cartItems = products.map((product) => {
-			const item = req.user.cartItems.find((cartItem) => cartItem.id === product.id);
-			return { ...product.toJSON(), quantity: item.quantity };
+			const item = storedCartItems.find((cartItem) => getCartProductId(cartItem) === String(product._id));
+			return { ...product.toJSON(), quantity: item?.quantity || 0 };
 		});
 
+		if (req.user.isModified("cartItems")) await req.user.save();
 		res.json(cartItems);
 	} catch (error) {
 		console.log("Error in getCartProducts controller", error.message);
@@ -21,12 +39,22 @@ export const addToCart = async (req, res) => {
 	try {
 		const { productId } = req.body;
 		const user = req.user;
+		if (!mongoose.isValidObjectId(productId)) {
+			return res.status(400).json({ message: "Invalid product ID" });
+		}
+		if (!(await Product.exists({ _id: productId }))) {
+			return res.status(404).json({ message: "Product not found" });
+		}
 
-		const existingItem = user.cartItems.find((item) => item.id === productId);
+		const cartItems = cleanCartItems(user);
+		const existingItem = cartItems.find((item) => getCartProductId(item) === productId);
 		if (existingItem) {
+			if (existingItem.quantity >= MAX_CART_QUANTITY) {
+				return res.status(400).json({ message: "Maximum quantity reached" });
+			}
 			existingItem.quantity += 1;
 		} else {
-			user.cartItems.push(productId);
+			cartItems.push({ product: productId, quantity: 1 });
 		}
 
 		await user.save();
@@ -44,7 +72,10 @@ export const removeAllFromCart = async (req, res) => {
 		if (!productId) {
 			user.cartItems = [];
 		} else {
-			user.cartItems = user.cartItems.filter((item) => item.id !== productId);
+			if (!mongoose.isValidObjectId(productId)) {
+				return res.status(400).json({ message: "Invalid product ID" });
+			}
+			user.cartItems = cleanCartItems(user).filter((item) => getCartProductId(item) !== productId);
 		}
 		await user.save();
 		res.json(user.cartItems);
@@ -56,13 +87,17 @@ export const removeAllFromCart = async (req, res) => {
 export const updateQuantity = async (req, res) => {
 	try {
 		const { id: productId } = req.params;
-		const { quantity } = req.body;
+		const quantity = Number(req.body.quantity);
 		const user = req.user;
-		const existingItem = user.cartItems.find((item) => item.id === productId);
+		if (!mongoose.isValidObjectId(productId) || !Number.isInteger(quantity) || quantity < 0 || quantity > MAX_CART_QUANTITY) {
+			return res.status(400).json({ message: "Invalid quantity or product ID" });
+		}
+		const cartItems = cleanCartItems(user);
+		const existingItem = cartItems.find((item) => getCartProductId(item) === productId);
 
 		if (existingItem) {
 			if (quantity === 0) {
-				user.cartItems = user.cartItems.filter((item) => item.id !== productId);
+				user.cartItems = cartItems.filter((item) => getCartProductId(item) !== productId);
 				await user.save();
 				return res.json(user.cartItems);
 			}

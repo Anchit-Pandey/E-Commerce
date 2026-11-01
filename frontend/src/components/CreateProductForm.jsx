@@ -19,10 +19,10 @@ const CreateProductForm = () => {
 	const handleSubmit = async (e) => {
 		e.preventDefault();
 		try {
-			await createProduct(newProduct);
-			setNewProduct({ name: "", description: "", price: "", category: "", image: "" });
-		} catch {
-			console.log("error creating a product");
+			const created = await createProduct(newProduct);
+			if (created) setNewProduct({ name: "", description: "", price: "", category: "", image: "" });
+		} catch (error) {
+			console.error("Error creating product:", error);
 		}
 	};
 

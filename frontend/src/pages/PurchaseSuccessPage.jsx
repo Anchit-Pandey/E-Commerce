@@ -13,12 +13,13 @@ const PurchaseSuccessPage = () => {
 	useEffect(() => {
 		const handleCheckoutSuccess = async (sessionId) => {
 			try {
-				await axios.post("/payments/checkout-success", {
+				const response = await axios.post("/payments/checkout-success", {
 					sessionId,
 				});
 				clearCart();
+				return response.data.orderId;
 			} catch (error) {
-				console.log(error);
+				setError(error.response?.data?.message || "We could not verify your payment");
 			} finally {
 				setIsProcessing(false);
 			}
@@ -66,7 +67,7 @@ const PurchaseSuccessPage = () => {
 					<div className='bg-gray-700 rounded-lg p-4 mb-6'>
 						<div className='flex items-center justify-between mb-2'>
 							<span className='text-sm text-gray-400'>Order number</span>
-							<span className='text-sm font-semibold text-emerald-400'>#12345</span>
+							<span className='text-sm font-semibold text-emerald-400'>Confirmed</span>
 						</div>
 						<div className='flex items-center justify-between'>
 							<span className='text-sm text-gray-400'>Estimated delivery</span>
@@ -75,13 +76,10 @@ const PurchaseSuccessPage = () => {
 					</div>
 
 					<div className='space-y-4'>
-						<button
-							className='w-full bg-emerald-600 hover:bg-emerald-700 text-white font-bold py-2 px-4
-             rounded-lg transition duration-300 flex items-center justify-center'
-						>
+						<div className='w-full bg-emerald-600 text-white font-bold py-2 px-4 rounded-lg flex items-center justify-center'>
 							<HandHeart className='mr-2' size={18} />
 							Thanks for trusting us!
-						</button>
+						</div>
 						<Link
 							to={"/"}
 							className='w-full bg-gray-700 hover:bg-gray-600 text-emerald-400 font-bold py-2 px-4 
