@@ -7,7 +7,7 @@
     "start": "node backend/server.js",
     "lint": "npm run lint --prefix frontend",
     "check:backend": "node --check backend/server.js && node --check backend/controllers/cart.controller.js && node --check backend/controllers/payment.controller.js",
-    "build": "npm install && npm install --prefix frontend && npm run build --prefix frontend"
+    "build": "npm ci && npm ci --prefix frontend && npm run build --prefix frontend"
   },
   "keywords": [],
   "author": "",
